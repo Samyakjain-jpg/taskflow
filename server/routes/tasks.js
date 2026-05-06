@@ -1,8 +1,8 @@
 const router = require("express").Router();
+const db = require("../db");
 const { authenticate } = require("../middleware/auth");
 
 router.get("/", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const { status, priority, assignee, project_id, overdue } = req.query;
   let query = `SELECT t.*, p.name as project_name, p.color as project_color, u.name as assignee_name, u.avatar as assignee_avatar, r.name as reporter_name FROM tasks t JOIN projects p ON t.project_id = p.id LEFT JOIN users u ON t.assignee_id = u.id LEFT JOIN users r ON t.reporter_id = r.id WHERE (p.owner_id = ? OR p.id IN (SELECT project_id FROM project_members WHERE user_id = ?))`;
   const params = [req.user.id, req.user.id];
@@ -30,7 +30,6 @@ router.get("/", authenticate, (req, res) => {
 });
 
 router.post("/", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const {
     title,
     description,
@@ -65,7 +64,6 @@ router.post("/", authenticate, (req, res) => {
 });
 
 router.get("/:id", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const task = db
     .prepare(
       "SELECT t.*, u.name as assignee_name, r.name as reporter_name, p.name as project_name, p.color as project_color FROM tasks t LEFT JOIN users u ON t.assignee_id=u.id LEFT JOIN users r ON t.reporter_id=r.id JOIN projects p ON t.project_id=p.id WHERE t.id=?",
@@ -81,7 +79,6 @@ router.get("/:id", authenticate, (req, res) => {
 });
 
 router.put("/:id", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const task = db.prepare("SELECT * FROM tasks WHERE id=?").get(req.params.id);
   if (!task) return res.status(404).json({ error: "Not found" });
   const { title, description, status, priority, assignee_id, due_date } =
@@ -106,13 +103,11 @@ router.put("/:id", authenticate, (req, res) => {
 });
 
 router.delete("/:id", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   db.prepare("DELETE FROM tasks WHERE id=?").run(req.params.id);
   res.json({ message: "Deleted" });
 });
 
 router.post("/:id/comments", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const { content } = req.body;
   if (!content) return res.status(400).json({ error: "Content required" });
   const result = db

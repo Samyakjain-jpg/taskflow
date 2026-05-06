@@ -1,8 +1,8 @@
 const router = require("express").Router();
+const db = require("../db");
 const { authenticate, requireProjectAdmin } = require("../middleware/auth");
 
 router.get("/", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const projects = db
     .prepare(
       `SELECT p.*, u.name as owner_name, (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id) as task_count, (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id AND t.status = 'done') as done_count, (SELECT COUNT(*) FROM project_members pm2 WHERE pm2.project_id = p.id) as member_count FROM projects p JOIN users u ON p.owner_id = u.id WHERE p.owner_id = ? OR p.id IN (SELECT project_id FROM project_members WHERE user_id = ?) ORDER BY p.created_at DESC`,
@@ -12,7 +12,6 @@ router.get("/", authenticate, (req, res) => {
 });
 
 router.post("/", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const { name, description, color, due_date } = req.body;
   if (!name) return res.status(400).json({ error: "Project name required" });
   const result = db
@@ -36,7 +35,6 @@ router.post("/", authenticate, (req, res) => {
 });
 
 router.get("/:id", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const project = db
     .prepare(
       "SELECT p.*, u.name as owner_name FROM projects p JOIN users u ON p.owner_id = u.id WHERE p.id = ?",
@@ -68,7 +66,6 @@ router.get("/:id", authenticate, (req, res) => {
 });
 
 router.put("/:id", authenticate, requireProjectAdmin, (req, res) => {
-  const db = req.app.locals.db;
   const { name, description, status, color, due_date } = req.body;
   if (!name) return res.status(400).json({ error: "Name required" });
   db.prepare(
@@ -87,13 +84,11 @@ router.put("/:id", authenticate, requireProjectAdmin, (req, res) => {
 });
 
 router.delete("/:id", authenticate, requireProjectAdmin, (req, res) => {
-  const db = req.app.locals.db;
   db.prepare("DELETE FROM projects WHERE id=?").run(req.params.id);
   res.json({ message: "Deleted" });
 });
 
 router.post("/:id/members", authenticate, requireProjectAdmin, (req, res) => {
-  const db = req.app.locals.db;
   const { email, role = "member" } = req.body;
   if (!email) return res.status(400).json({ error: "Email required" });
   const user = db
@@ -115,7 +110,6 @@ router.delete(
   authenticate,
   requireProjectAdmin,
   (req, res) => {
-    const db = req.app.locals.db;
     db.prepare(
       "DELETE FROM project_members WHERE project_id=? AND user_id=?",
     ).run(req.params.id, req.params.userId);

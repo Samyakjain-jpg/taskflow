@@ -1,8 +1,8 @@
 const router = require("express").Router();
+const db = require("../db");
 const { authenticate, requireAdmin } = require("../middleware/auth");
 
 router.get("/", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const users = db
     .prepare(
       "SELECT id, name, email, role, avatar, created_at FROM users ORDER BY name",
@@ -12,7 +12,6 @@ router.get("/", authenticate, (req, res) => {
 });
 
 router.get("/stats", authenticate, (req, res) => {
-  const db = req.app.locals.db;
   const uid = req.user.id;
   const totalTasks = db
     .prepare(
@@ -57,7 +56,6 @@ router.get("/stats", authenticate, (req, res) => {
 });
 
 router.put("/:id/role", authenticate, requireAdmin, (req, res) => {
-  const db = req.app.locals.db;
   const { role } = req.body;
   if (!["admin", "member"].includes(role))
     return res.status(400).json({ error: "Invalid role" });
