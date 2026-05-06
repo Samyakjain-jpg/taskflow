@@ -137,4 +137,3 @@ const wrapper = {
 };
 
 module.exports = { wrapper, initDb };
-EOF;

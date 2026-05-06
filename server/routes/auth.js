@@ -55,4 +55,3 @@ router.post("/login", (req, res) => {
 router.get("/me", authenticate, (req, res) => res.json({ user: req.user }));
 
 module.exports = router;
-EOF;
